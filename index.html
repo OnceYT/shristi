@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Cognitive Study</title>
+<style>
+html, body { margin:0; height:100%; overflow:hidden; background: #e6e6e6; color: #111; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; touch-action: manipulation; overscroll-behavior: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+#app { position: fixed; left: 0; top: 0; width: 100vw; height: var(--vh, 100dvh); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 1vmin 4vw; box-sizing: border-box; }
+#app.scr { justify-content: flex-start; overflow-y: auto; touch-action: pan-y; }
+#app.scr > :first-child { margin-top: auto; }
+#app.scr > :last-child { margin-bottom: auto; }
+h1 { font-size: 30px; margin: 6px; }
+h2 { margin: 6px; }
+.q { font-size: 24px; margin: 8px; }
+.txt { font-size: 22px; line-height: 1.4; max-width: 900px; max-height: 55vh; overflow-y: auto; touch-action: pan-y; margin: 8px; text-align: left; }
+.b { min-height: 56px; min-width: 140px; font-size: 22px; border: 2px solid #111; background: #f5f5f5; color: #111; border-radius: 10px; margin: 6px; padding: 6px 18px; font-family: inherit; cursor: pointer; }
+.b[disabled] { opacity: .35; cursor: not-allowed; }
+.sel { background: #111; color: #fff; }
+.sc { display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 2px; }
+.sc span { font-size: 15px; width: 90px; }
+.sc .b { min-width: 48px; width: 48px; padding: 0; margin: 3px; }
+.big { font-size: 72px; }
+.words { display: flex; gap: 6vw; font-size: clamp(28px, 7vw, 64px); margin: 4vh 0; }
+input[type=text], input[type=number] { font-size: 26px; padding: 8px; border: 2px solid #111; border-radius: 8px; background: #fff; user-select: text; -webkit-user-select: text; width: 60vw; max-width: 420px; }
+#stage { position: relative; width: 100%; }
+.lt, #fx { position: absolute; transform: translate(-50%,-50%); font-weight: 700; font-family: Arial, Helvetica, sans-serif; line-height: 1; }
+.lt { visibility: hidden; }
+#fx { left: 50%; top: 50%; }
+.rb { width: 30vw; min-height: 64px; font-size: 32px; }
+#tm { font-size: 34px; margin: 2px; }
+#tb { width: 60vw; height: 8px; background: #ccc; margin-bottom: 10px; }
+#tb i { display: block; height: 100%; background: #111; animation: th linear forwards; }
+@keyframes th { from { width: 100%; } to { width: 0; } }
+#ov { position: fixed; inset: 0; background: #e6e6e6; z-index: 9; display: none; align-items: center; justify-content: center; font-size: 28px; text-align: center; }
+#endb { position: fixed; top: 6px; right: 6px; z-index: 20; min-height: 44px; font-size: 15px; padding: 4px 12px; border: 2px solid #777; background: transparent; color: #444; border-radius: 10px; font-family: inherit; display: none; cursor: pointer; }
+#cf { position: fixed; inset: 0; background: rgba(230, 230, 230, .97); z-index: 30; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.example-box { background: #fff; border: 2px solid #333; border-radius: 8px; padding: 15px; margin: 15px 0; text-align: center; width: 100%; max-width: 600px; box-sizing: border-box; }
+.highlight-red { color: #d9534f; font-weight: bold; }
+@media (max-height: 420px) {
+  h1 { font-size: 22px; }
+  .q { font-size: 18px; }
+  .txt { font-size: 18px; }
+  .b { min-height: 48px; font-size: 18px; }
+  .sc .b { min-height: 44px; }
+  .words { margin: 2vh 0; }
+  #tm { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="ov">Please turn your device to landscape.</div>
+<button id="endb"></button>
+<div id="cf"></div>
+<script>
+const CONFIG = {
+  sheetUrl: "https://script.google.com/macros/s/AKfycbx1Am0XMd-x9BTghL0uByboGggopnGGxW3F7-O2Ru_f23YsbhJpRsYiTem-IMQ-_qwJ/exec",
+  sheetToken: "Attention-and-thinking",
+  groupMap: {"Group 1": "CONTROL", "Group 2": "HIGH", "Group 3": "LOW"},
+  craBlocks: 4,
+  attnTrialsPerBlock: 36,
+  maxItems: 32,
+  controlRestSeconds: 8,
+  fixationMs: 1000,
+  displayMs: 150,
+  responseWindowMs: 3000,
+  feedbackMs: 500,
+  fixationDuringDisplay: true,
+  fixedTrialDuration: false, fixedTrialMs: 2650,
+  practiceTrials: 18,
+  ringRadiusDeg: 2.0,
+  ringLetterH_Deg: 0.6, ringLetterW_Deg: 0.4,
+  distH_Deg: 1.0, distW_Deg: 0.55, distEccDeg: 4.0,
+  craTimeLimitMs: 30000,
+  craIti: 1000, ratingDelayMs: 1000,
+  showTimer: true, ratingOtherEnabled: false, moodEnabled: true,
+  strings: {
+    back: "Back", next: "Next", start: "Start", readyT: "Ready?",
+    consent: "<h3>Consent & Information</h3><p>Welcome to this cognitive psychology study investigating attention and problem-solving processes. Participation is entirely voluntary. You may withdraw at any time without penalty. All data collected is stored securely and anonymously.</p>",
+    agree: "I have read this information and agree to take part", cont: "Continue",
+    disagree: "I do not agree",
+    declined: "Thank you. The session has ended.",
+    qInitials: "Please enter your Initials (e.g., JS):",
+    qAge: "How old are you (in years)?", qGender: "What is your gender?", qLang: "What is your first language?", qFlu: "How fluent is your English?", qVis: "Is your vision normal or corrected?",
+    fluLo: "basic", fluHi: "native-like",
+    gender: {female: "Female", male: "Male", nonbinary: "Non-binary", self: "Prefer to self-describe", none: "Prefer not to say"},
+    selfDesc: "Please describe:", vision: {ok: "Normal or corrected", no: "Not corrected"},
+    groupT: "Group Selection", groupTxt: "Please tap your assigned group code.",
+    craInstrPages: [
+      "<h3>About Compound Remote Associate Problems</h3><p>In this task, you will see three stimulus words presented on the screen (for example: <b>ROCKING</b>, <b>WHEEL</b>, <b>HIGH</b>).</p><p>Your goal is to think of a <b>fourth word</b> that can form a common compound word or familiar phrase with <i>each</i> of the three stimulus words independently.</p>",
+      "<h3>How the Words Combine</h3><p>The solution word can appear either <b>before</b> or <b>after</b> each prompt word to create a standard phrase.</p><div class=\"example-box\"><div>rocking + <span class=\"highlight-red\">chair</span> = rocking chair</div><div><span class=\"highlight-red\">chair</span> + wheel = wheelchair</div><div>high + <span class=\"highlight-red\">chair</span> = high chair</div></div><p>Here, the correct solution connecting all three is <b class=\"highlight-red\">CHAIR</b>.</p>",
+      "<h3>Task Instructions & Timing</h3><p>You will have <b>30 seconds</b> for each word problem. Type your answer directly into the text box and press <b>Submit</b> (or hit Enter). If you cannot solve it before the timer expires, the trial will automatically advance.</p>"
+    ],
+    craPracticeIntro: "Good! Now let's begin the practice problems.",
+    attMainIntro: "Good! Practice is complete. Now let's begin the main letter task.",
+    testBeginMsg: "Good! Now let's begin the test.",
+    submit: "Submit", correct: "Correct", answerWas: "The answer was: ",
+    ratingQ: "How did the answer come to you?", ratingInsight: "Insight / Sudden", ratingAnalytic: "Step-wise / Analytical", ratingOther: "Other", ratingReminder: "",
+    attInstr: [
+      "<h3>Attention Task Instructions</h3><p>You will see a fixation cross (+) in the middle of the screen. Keep your eyes strictly fixed on this center cross throughout the trial.</p><p>A circle of letters will flash very briefly around the center, accompanied by an external distractor letter outside the circle. One of the letters inside the circle will be either <b>X</b> or <b>N</b>.</p>",
+      "<h3>Your Response Goal</h3><p>Press the corresponding key (or tap the button) for <b>X</b> or <b>N</b> as quickly and accurately as you can. <b>Completely ignore</b> the external letter outside the circle. After each response, feedback (+ for correct, - for incorrect) will appear. First you will complete 18 practice trials.</p>"
+    ],
+    attRoundT: "Letter task", attRoundTxt: "Now a short round of the letter task. Find the X or N in the circle and press X or N, as before.", backT: "Back to the word problems",
+    moodQ: "How are you feeling right now?", moodLo: "very unpleasant", moodHi: "very pleasant",
+    effortQ: "How mentally effortful did you find the letter task?", frustQ: "How frustrating did you find the letter task?", lo: "not at all", hi: "extremely",
+    getReady: "Get ready", restTxt: "Please wait for the next part.", paused: "Paused. Tap to continue.",
+    endBtn: "End session", endQ: "End the session now?", endTxt: "Your answers so far will be saved.", endYes: "Yes, end session", endNo: "No, go back", endedT: "The session has ended.",
+    debrief: "<h3>Debriefing</h3><p>Thank you for taking part! This study investigates whether varying visual attention demands (perceptual load) alter subsequent creative problem-solving performance. Please do not discuss details with others.</p>",
+    doneT: "Your session is complete", restart: "Restart session", wait: "Saving data..."
+  },
+  practiceItems: [
+    {id: "p1", set: "P", words: ["carbon", "cat", "right"], answers: ["copy"]},
+    {id: "p2", set: "P", words: ["catcher", "food", "hot"], answers: ["dog"]}
+  ]
+};
+
+const RAW = [
+  [1, "cottage", "brick", "cake", "cheese"], [2, "cream", "skate", "water", "ice"], [3, "loser", "throat", "spot", "sore"], [7, "dew", "comb", "bee", "honey"],
+  [11, "aid", "rubber", "wagon", "band"], [15, "cane", "daddy", "plum", "sugar"], [17, "fish", "mine", "rush", "gold"], [18, "political", "surprise", "line", "party"],
+  [24, "flower", "friend", "scout", "girl"], [27, "print", "berry", "bird", "blue"], [32, "fur", "rack", "tail", "coat"], [34, "hound", "pressure", "shot", "blood"],
+  [36, "sleeping", "bean", "trash", "bag"], [40, "food", "forward", "break", "fast"], [52, "boot", "summer", "ground", "camp"], [54, "chamber", "mask", "natural", "gas"],
+  [57, "weight", "clip", "wall", "paper"], [62, "tank", "hill", "secret", "top"], [63, "dress", "dial", "flower", "sun"], [65, "health", "taker", "less", "care"],
+  [78, "way", "board", "sleep", "walk"], [84, "cover", "arm", "wear", "under"], [90, "cat", "number", "phone", "call"], [92, "tooth", "potato", "heart", "sweet"],
+  [93, "man", "glue", "star", "super"], [95, "dive", "light", "rocket", "sky"], [98, "type", "ghost", "screen", "writer"], [110, "shock", "shave", "taste", "after"],
+  [116, "cry", "front", "ship", "battle"], [119, "pea", "shell", "chest", "nut"], [130, "control", "place", "rate", "birth"], [140, "shadow", "chart", "drop", "eye"]
+];
+
+const ITEMS = RAW.map(r => ({id: "cra" + r[0], set: "ALL", words: [r[1], r[2], r[3]], answers: [r[4]]}));
+
+(() => {
+  'use strict';
+  const C = CONFIG, T = C.strings, Q = new URLSearchParams(location.search), $ = s => document.querySelector(s);
+  const DEMO = Q.get('demo') === '1', AUTO = Q.get('autoplay') === '1';
+  const app = $('#app'), ov = $('#ov'), endb = $('#endb'), cf = $('#cf'), ENDERR = {ended: true};
+  let ended = false, finished = false;
+  const sleep = ms => new Promise((r, j) => setTimeout(() => ended ? j(ENDERR) : r(), ms)),
+        raf = () => new Promise((r, j) => requestAnimationFrame(t => ended ? j(ENDERR) : r(t))),
+        now = () => performance.now();
+
+  async function waitRaf(ms) {
+    const t = now();
+    while (now() - t <= ms - 4) await raf();
+  }
+
+  function mulberry32(a) {
+    return function() {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function hash(s) {
+    let h = 2166136261;
+    for (const c of s) {
+      h ^= c.charCodeAt(0);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+
+  function shuffle(a, rng) {
+    a = a.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  let S = {seeds: {}, pid: ''}, D = {att: [], cra: [], ev: [], final: false}, intr = false, pendingPause = false, typing = false, running = false, frames = 16.7, framesUsed = 18, wl = null, hzP = null;
+
+  function showRaw(h, o = {}) {
+    app.className = o.scr ? 'scr' : '';
+    app.innerHTML = h;
+    if (AUTO) setTimeout(autoDrive, 40);
+  }
+
+  function show(h, o = {}) {
+    if (ended && !o.force) throw ENDERR;
+    showRaw(h, o);
+  }
+
+  function choose(h, o) {
+    show(h, o);
+    return new Promise(res => app.querySelectorAll('[data-v]').forEach(b => b.onclick = () => res(b.dataset.v)));
+  }
+
+  function autoDrive() {
+    app.querySelectorAll('input[type=number]').forEach(i => { i.value = 25; i.dispatchEvent(new Event('input')); });
+    app.querySelectorAll('input[type=text]').forEach(i => { i.value = 'test'; i.dispatchEvent(new Event('input')); });
+    app.querySelectorAll('input[type=checkbox]').forEach(i => { i.checked = true; i.dispatchEvent(new Event('change')); });
+    const g = app.querySelector('[data-go]:not([disabled])');
+    if (g) return g.click();
+    const b = [...app.querySelectorAll('[data-v]')].filter(x => !x.disabled);
+    if (b.length) b[Math.floor(Math.random() * b.length)].click();
+  }
+
+  async function pages(title, arr) {
+    let i = 0;
+    for (;;) {
+      const v = await choose(`<h1>${title}</h1><div class="txt">${arr[i]}</div><div><button class="b" data-v="back" ${i ? '' : 'disabled'}>${T.back}</button><button class="b" data-v="next" data-go>${T.next}</button></div>`);
+      if (v === 'back') i--;
+      else if (i === arr.length - 1) return;
+      else i++;
+    }
+  }
+
+  const ready = () => choose(`<h1>${T.readyT}</h1><button class="b" data-v="1" data-go>${T.start}</button>`);
+
+  function scales(items) {
+    return new Promise(res => {
+      const ans = {};
+      show(items.map(it => `<div class="row" data-k="${it.k}"><div class="q">${it.q}</div><div class="sc"><span>${it.lo}</span>` + [1, 2, 3, 4, 5, 6, 7].map(n => `<button class="b opt" data-n="${n}">${n}</button>`).join('') + `<span>${it.hi}</span></div></div>`).join('') + `<button class="b" id="nx" disabled data-go>${T.next}</button>`, {scr: 1});
+      app.querySelectorAll('.row').forEach(r => r.querySelectorAll('.opt').forEach(o => o.onclick = () => {
+        r.querySelectorAll('.opt').forEach(x => x.classList.remove('sel'));
+        o.classList.add('sel');
+        ans[r.dataset.k] = +o.dataset.n;
+        if (Object.keys(ans).length == items.length) $('#nx').disabled = false;
+      }));
+      $('#nx').onclick = () => res(ans);
+    });
+  }
+
+  function textQ(q, type) {
+    return new Promise(res => {
+      show(`<div class="q">${q}</div><input id="ti" type="${type}" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false"><div><button class="b" id="nx" disabled data-go>${T.next}</button></div>`);
+      const i = $('#ti');
+      i.oninput = () => $('#nx').disabled = !i.value.trim();
+      $('#nx').onclick = () => res(i.value.trim());
+    });
+  }
+
+  const moodItem = {k: 'mood', q: T.moodQ, lo: T.moodLo, hi: T.moodHi};
+
+  function ev(e) {
+    D.ev.push({rowId: S.pid + '-ev-' + D.ev.length, participantId: S.pid, timestamp: new Date().toISOString(), event: e});
+  }
+
+  function persist() {
+    try { localStorage.setItem('exp_' + S.pid, JSON.stringify({S, D})); } catch (e) {}
+  }
+
+  async function flush() {
+    if (!C.sheetUrl) return;
+    const tables = {Sessions: D.final ? [S.row] : [], AttentionTrials: D.att, CRATrials: D.cra, Events: D.ev};
+    try {
+      await fetch(C.sheetUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {'Content-Type': 'text/plain; charset=utf-8'},
+        body: JSON.stringify({token: C.sheetToken, tables})
+      });
+    } catch (e) { ev('sync failure'); }
+  }
+
+  const bad = () => !typing && (innerHeight > innerWidth || innerWidth < 568 || innerHeight < 320);
+
+  function chk() {
+    const b = bad();
+    if (b && ov.style.display != 'flex') { intr = true; ev('pause: orientation/size'); }
+    ov.style.display = b ? 'flex' : 'none';
+  }
+
+  async function portraitWait() {
+    while (bad()) { chk(); await sleep(100); }
+    chk();
+  }
+
+  function setVh() {
+    app.style.setProperty('--vh', (window.visualViewport ? visualViewport.height : innerHeight) + 'px');
+  }
+
+  document.addEventListener('visibilitychange', () => { ev('visibilitychange: ' + document.visibilityState); if (document.hidden) intr = true; });
+  addEventListener('blur', () => ev('blur'));
+  addEventListener('orientationchange', () => ev('orientationchange'));
+  let rt;
+  addEventListener('resize', () => { chk(); setVh(); clearTimeout(rt); rt = setTimeout(() => ev('resize ' + innerWidth + 'x' + innerHeight), 300); });
+  if (window.visualViewport) visualViewport.addEventListener('resize', setVh);
+  setVh();
+  addEventListener('beforeunload', e => { if (running) { flush(); e.preventDefault(); e.returnValue = ''; } });
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('touchmove', e => { if (!e.target.closest('.txt, .scr, #cf')) e.preventDefault(); }, {passive: false});
+
+  async function maybePause() {
+    if (pendingPause) {
+      await choose(`<h1>${T.paused}</h1><button class="b" data-v="1" data-go>${T.cont}</button>`);
+      pendingPause = false;
+    }
+    await portraitWait();
+    intr = false;
+  }
+
+  endb.textContent = T.endBtn;
+  cf.innerHTML = `<h1>${T.endQ}</h1><p class="txt">${T.endTxt}</p><div><button class="b" id="cfy">${T.endYes}</button> <button class="b" id="cfn">${T.endNo}</button></div>`;
+  endb.onclick = () => { intr = true; ev('end button pressed'); cf.style.display = 'flex'; };
+  $('#cfn').onclick = () => { cf.style.display = 'none'; };
+  $('#cfy').onclick = () => { cf.style.display = 'none'; finish(true); };
+
+  const norm = s => (s || '').normalize('NFC').trim().toLowerCase().replace(/[\p{P}\p{S}\s]+/gu, '');
+
+  function lev(a, b) {
+    const m = [...Array(a.length + 1)].map((_, i) => [i]);
+    for (let j = 1; j <= b.length; j++) m[0][j] = j;
+    for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) m[i][j] = Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + (a[i - 1] == b[j - 1] ? 0 : 1));
+    return m[a.length][b.length];
+  }
+
+  async function craTrial(it, phase, pos, blk, pib) {
+    await maybePause();
+    const prac = phase == 'practice', row = {
+      rowId: S.pid + '-cra-' + phase + '-' + pos, participantId: S.pid, condition: S.cond, phase, blockNo: blk, positionInBlock: pib, setId: it.set, itemId: it.id, positionInSet: pos, word1: it.words[0], word2: it.words[1], word3: it.words[2], timedOut: false, skipped: false, pressRt_ms: null, skipRt_ms: null, typedAnswer: null, correct: null, needsReview: null, typingTime_ms: null, solutionRating: null, ratingRt_ms: null, ratingOrder: S.ratingOrder, interrupted: false, trialStartTs: new Date().toISOString()
+    };
+    const secs = Math.ceil(C.craTimeLimitMs / 1000);
+    show(`<div class="words">${it.words.map(w => `<span>${w}</span>`).join('')}</div>` +
+      `${C.showTimer ? `<div id="tm">${secs}</div><div id="tb"><i style="animation-duration:${C.craTimeLimitMs}ms"></i></div>` : ''}` +
+      `<div id="ctl" style="display: flex; flex-direction:column; align-items:center; gap:10px;">` +
+      `<input id="ans" type="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Type answer and press Enter..." style="font-size: 24px; padding:8px;width:60vw;max-width:420px;">` +
+      `<div><button class="b" id="sub">${T.submit}</button></div></div>`);
+    const t0 = now(); let iv;
+    const inp = $('#ans');
+    inp.focus();
+    const r = await new Promise(res => {
+      let done = false, to;
+      const fin = (k, val = null) => {
+        if (done) return;
+        const currentVal = val != null ? val : inp.value.trim();
+        if (k === 'press' && !currentVal) return; // Ignore blank submissions so timer continues until they type or time out
+        done = true;
+        clearTimeout(to);
+        clearInterval(iv);
+        inp.removeEventListener('keydown', kd);
+        res({ k, ms: now() - t0, val: currentVal });
+      };
+      const kd = e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          fin('press');
+        }
+      };
+      inp.addEventListener('keydown', kd);
+      $('#sub').onclick = () => fin('press');
+      to = setTimeout(() => fin('timeout'), C.craTimeLimitMs);
+      const tmEl = $('#tm');
+      if (tmEl) iv = setInterval(() => {
+        tmEl.textContent = Math.max(0, Math.ceil((C.craTimeLimitMs - (now() - t0)) / 1000));
+      }, 200);
+      if (AUTO) {
+        setTimeout(() => {
+          inp.value = Math.random() < .6 ? it.answers[0] : 'xyz';
+          fin('press');
+        }, 300);
+      }
+    });
+
+    if (r.k === 'timeout') {
+      row.timedOut = true;
+      row.typedAnswer = r.val;
+      row.correct = false;
+      row.interrupted = intr;
+      show('');
+      if (prac) await choose(`<div class="q">${T.answerWas}${it.answers[0]}</div><button class="b" data-v="1" data-go>${T.next}</button>`);
+      else await sleep(C.craIti);
+      D.cra.push(row); persist(); flush();
+      if (intr) pendingPause = true;
+      return;
+    }
+
+    row.pressRt_ms = +r.ms.toFixed(1);
+    row.typedAnswer = r.val;
+    const n = norm(r.val), acc = it.answers.map(norm);
+    row.correct = acc.includes(n);
+    row.needsReview = !row.correct && (n === '' || acc.some(a => lev(n, a) <= 1));
+    let opts = [['insight', T.ratingInsight], ['analytic', T.ratingAnalytic]];
+    if (S.ratingOrder == 1) opts.reverse();
+    if (C.ratingOtherEnabled) opts.push(['other', T.ratingOther]);
+    const tr = now();
+    const v = await choose(`<div class="q">${T.ratingQ}</div>${T.ratingReminder ? `<p>${T.ratingReminder}</p>` : ''}<div>${opts.map(o => `<button class="b" style="min-height:72px;font-size:24px" data-v="${o[0]}">${o[1]}</button>`).join('')}</div>`);
+    row.solutionRating = v;
+    row.ratingRt_ms = +(now() - tr).toFixed(1);
+    row.interrupted = intr;
+    if (intr) pendingPause = true;
+    D.cra.push(row); persist(); flush();
+    show('');
+    if (prac) await choose(`<div class="q">${row.correct ? T.correct : T.answerWas + it.answers[0]}</div><button class="b" data-v="1" data-go>${T.next}</button>`);
+    else await sleep(C.ratingDelayMs);
+  }
+
+  function geom() {
+    return {ppd: Math.min(innerWidth, innerHeight) / 14};
+  }
+
+  function makeBlock(n, rng) {
+    const T3 = ['congruent', 'incongruent', 'neutral'];
+    const positions = [0, 1, 2, 3, 4, 5];
+    const sides = ['left', 'right'];
+    const targets = ['X', 'N'];
+    let grid = [];
+    for (const t of targets) {
+      for (const pos of positions) {
+        for (const dtype of T3) {
+          for (const side of sides) {
+            let dl = dtype === 'congruent' ? t : (dtype === 'incongruent' ? (t === 'X' ? 'N' : 'X') : 'P');
+            grid.push({ target: t, pos: pos, dtype: dtype, dl: dl, side: side });
+          }
+        }
+      }
+    }
+    let passes = [];
+    while (passes.length < n) {
+      passes = passes.concat(shuffle(grid, rng));
+    }
+    const selected = passes.slice(0, n);
+    return selected.map(item => {
+      const ring = Array(6).fill('O');
+      if (S.cond === 'HIGH') {
+        const f = shuffle(['H', 'K', 'M', 'Z', 'W'], rng);
+        let j = 0;
+        for (let p = 0; p < 6; p++) {
+          if (p !== item.pos) ring[p] = f[j++];
+        }
+      }
+      ring[item.pos] = item.target;
+      return { target: item.target, pos: item.pos, ring: ring, dtype: item.dtype, dl: item.dl, side: item.side };
+    });
+  }
+
+  async function attTrial(sp, blk, idx) {
+    await maybePause();
+    const P = geom().ppd, fs = h => h / 0.716;
+    const Ls = (ch, x, y, h) => `<span class="lt" style="left:calc(50% + ${x}px); top:calc(50% + ${y}px); font-size:${fs(h)}px">${ch}</span>`;
+    const ringH = sp.ring.map((ch, p) => {
+      const a = p * Math.PI / 3;
+      return Ls(ch, Math.sin(a) * C.ringRadiusDeg * P, -Math.cos(a) * C.ringRadiusDeg * P, C.ringLetterH_Deg * P);
+    }).join('');
+    const dH = Ls(sp.dl, (sp.side == 'left' ? -1 : 1) * C.distEccDeg * P, 0, C.distH_Deg * P);
+    show(`<div id="stage" style="height:${Math.min(innerHeight * .5, 8 * P)}px"><span id="fx" style="font-size:${1.2 * P}px">+</span>${ringH}${dH}</div><div><button class="b rb" data-r="x">X</button><button class="b rb" data-r="n">N</button></div>`);
+    const ls = [...app.querySelectorAll('.lt')], fx = $('#fx'), tStart = now();
+    let ton = null, toff = null, resp = null, extra = 0;
+    const onR = (k, m) => {
+      if (ton == null) return;
+      if (!resp) resp = {k, t: now(), m};
+      else extra++;
+    };
+    const kd = e => {
+      const k = e.key.toLowerCase();
+      if (k == 'x' || k == 'n') onR(k, 'key');
+    };
+    document.addEventListener('keydown', kd);
+    [...app.querySelectorAll('[data-r]')].forEach(b => b.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      onR(b.dataset.r, e.pointerType || 'pointer');
+    }));
+    await waitRaf(C.fixationMs);
+    await raf();
+    let cnt = 0;
+    await new Promise(res => {
+      ls.forEach(e => e.style.visibility = 'visible');
+      if (!C.fixationDuringDisplay) fx.style.visibility = 'hidden';
+      ton = now();
+      const step = () => {
+        cnt++;
+        if (cnt >= framesUsed) {
+          ls.forEach(e => e.style.visibility = 'hidden');
+          fx.style.visibility = 'hidden';
+          toff = now();
+          res();
+        } else {
+          requestAnimationFrame(step);
+        }
+      };
+      requestAnimationFrame(step);
+    });
+    if (AUTO) setTimeout(() => onR(Math.random() < .8 ? sp.target.toLowerCase() : (sp.target == 'X' ? 'n' : 'x'), 'auto'), 200);
+    await new Promise(res => {
+      const w = () => {
+        if (resp || now() - toff >= C.responseWindowMs) res();
+        else requestAnimationFrame(w);
+      };
+      w();
+    });
+    const correct = !!resp && resp.k.toUpperCase() == sp.target, sign = correct ? '+' : '-';
+    fx.textContent = sign;
+    fx.style.visibility = 'visible';
+    const row = {
+      rowId: S.pid + '-att-' + blk + '-' + idx, participantId: S.pid, condition: S.cond, block: blk, trial: idx, targetLetter: sp.target, targetPosition: sp.pos, ringLetters: sp.ring.join(''), distractorType: sp.dtype, distractorLetter: sp.dl, distractorSide: sp.side, responseKey: resp ? resp.k.toUpperCase() : null, correct, timedOut: !resp, rt_ms: resp ? +(resp.t - ton).toFixed(1) : null, rtFromOffset_ms: resp ? +(resp.t - toff).toFixed(1) : null, feedbackShown: sign, extraPresses: 0, inputMethod: resp ? resp.m : null, targetDisplayMs: C.displayMs, framesUsed, measuredDisplayMs: +(toff - ton).toFixed(2), interrupted: intr, trialStartTs: new Date(performance.timeOrigin + tStart).toISOString()
+    };
+    await waitRaf(C.feedbackMs);
+    if (C.fixedTrialDuration) await waitRaf(C.fixedTrialMs - (now() - tStart));
+    document.removeEventListener('keydown', kd);
+    row.extraPresses = extra;
+    if (intr) pendingPause = true;
+    D.att.push(row);
+    persist();
+    flush();
+  }
+
+  async function attRound(b) {
+    if (b == 1) {
+      await hzP;
+      await pages('', T.attInstr);
+      await ready();
+      const pr = makeBlock(C.practiceTrials, mulberry32(S.seeds.attPractice = hash(S.pid + 'ap')));
+      for (let i = 0; i < pr.length; i++) await attTrial(pr[i], 0, i + 1);
+      await choose(`<h1>${T.attMainIntro}</h1><button class="b" data-v="1" data-go>${T.start}</button>`);
+    } else {
+      await choose(`<h1>${T.attRoundT}</h1><div class="txt">${T.attRoundTxt}</div><button class="b" data-v="1" data-go>${T.start}</button>`);
+    }
+    const bl = makeBlock(C.attnTrialsPerBlock, mulberry32(S.seeds['att' + b] = hash(S.pid + 'ab' + b)));
+    for (let i = 0; i < bl.length; i++) await attTrial(bl[i], b, i + 1);
+    flush();
+    if (b > 1) await choose(`<h1>${T.backT}</h1><button class="b" data-v="1" data-go>${T.start}</button>`);
+  }
+
+  function blockSizes(N, B) {
+    B = Math.max(1, Math.min(B, N));
+    const q = Math.floor(N / B), r = N % B;
+    return Array.from({length: B}, (_, i) => q + (i < r ? 1 : 0));
+  }
+
+  async function measure() {
+    const f = [];
+    let t = await raf();
+    for (let i = 0; i < 60; i++) {
+      const n = await raf();
+      f.push(n - t);
+      t = n;
+    }
+    f.sort((a, b) => a - b);
+    let frameMs = f[30];
+    if (!isFinite(frameMs) || frameMs < 4 || frameMs > 100) frameMs = 16.7;
+    S.hz = 1000 / frameMs;
+    framesUsed = Math.max(1, Math.round(C.displayMs / frameMs));
+  }
+
+  async function flow() {
+    running = true;
+    S.startTime = new Date().toISOString();
+    hzP = measure().catch(() => {});
+    const p = await choose(`<h1>Welcome</h1><div class="txt">${T.consent}</div><label style="font-size:20px"><input type="checkbox" id="cb" onchange="document.getElementById('okb').disabled = !this.checked"> ${T.agree}</label><div><button class="b" data-v="ok" data-go disabled id="okb">${T.cont}</button><button class="b" data-v="no">${T.disagree}</button></div>`);
+    if (p == 'no') {
+      ev('declined');
+      await flush();
+      running = false;
+      finished = true;
+      show(`<h1>${T.declined}</h1><button class="b" id="rs">${T.restart}</button>`);
+      $('#rs').onclick = () => location.reload();
+      return;
+    }
+    S.consentTs = new Date().toISOString();
+    endb.style.display = 'block';
+    try { await document.documentElement.requestFullscreen?.(); } catch (e) {}
+    try { wl = await navigator.wakeLock?.request('screen'); } catch (e) {}
+    const initials = await textQ(T.qInitials, 'text');
+    S.pid = initials.toUpperCase().replace(/[^A-Z]/g, '') + '_' + Math.floor(1000 + Math.random() * 9000);
+    S.age = await textQ(T.qAge, 'number');
+    const gk = await choose(`<div class="q">${T.qGender}</div><div>` + Object.entries(T.gender).map(([k, v]) => `<button class="b" data-v="${k}">${v}</button>`).join('') + '</div>');
+    S.gender = gk == 'self' ? 'self: ' + await textQ(T.selfDesc, 'text') : T.gender[gk];
+    S.lang = await textQ(T.qLang, 'text');
+    S.flu = (await scales([{k: 'f', q: T.qFlu, lo: T.fluLo, hi: T.fluHi}])).f;
+    const vk = await choose(`<div class="q">${T.qVis}</div><div>` + Object.entries(T.vision).map(([k, v]) => `<button class="b" data-v="${k}">${v}</button>`).join('') + '</div>');
+    S.vision = T.vision[vk];
+    if (C.moodEnabled) S.moodBase = (await scales([moodItem])).mood;
+    const gc = await choose(`<h1>${T.groupT}</h1><p class="txt">${T.groupTxt}</p><div>` + Object.keys(C.groupMap).map(k => `<button class="b" data-v="${k}">${k}</button>`).join('') + '</div>');
+    S.n = null;
+    S.gc = gc;
+    S.cond = C.groupMap[gc];
+    S.ratingOrder = hash(S.pid) % 2;
+    const att = S.cond != 'CONTROL';
+    ev('group chosen');
+    if (att) {
+      await attRound(1);
+      if (C.moodEnabled) {
+        const r = await scales([moodItem, {k: 'effort', q: T.effortQ, lo: T.lo, hi: T.hi}, {k: 'frust', q: T.frustQ, lo: T.lo, hi: T.hi}]);
+        S.moodPost = r.mood;
+        S.effort = r.effort;
+        S.frust = r.frust;
+      }
+    }
+    await pages('', T.craInstrPages);
+    await choose(`<h1>${T.craPracticeIntro}</h1><button class="b" data-v="1" data-go>${T.start}</button>`);
+    for (let i = 0; i < C.practiceItems.length; i++) await craTrial(C.practiceItems[i], 'practice', i + 1, 0, i + 1);
+    await choose(`<h1>${T.testBeginMsg}</h1><button class="b" data-v="1" data-go>${T.next}</button>`);
+    let items = shuffle(ITEMS, mulberry32(S.seeds.cra = hash(S.pid + 'cra')));
+    if (C.maxItems) items = items.slice(0, C.maxItems);
+    const sizes = blockSizes(items.length, C.craBlocks);
+    S.blockSizes = sizes;
+    let pos = 0;
+    for (let b = 1; b <= sizes.length; b++) {
+      if (att && b > 1) await attRound(b);
+      for (let i = 0; i < sizes[b - 1]; i++) {
+        pos++;
+        await craTrial(items[pos - 1], 'main', pos, b, i + 1);
+      }
+    }
+    endb.style.display = 'none';
+    await choose(`<h1>Debrief</h1><div class="txt">${T.debrief}</div><button class="b" data-v="1" data-go>${T.next}</button>`);
+    await finish(false);
+  }
+
+  async function finish(early) {
+    if (finished) return;
+    finished = true;
+    if (early) ended = true;
+    endb.style.display = 'none';
+    if (S.consentTs) S.endedEarly = !!early;
+    S.endTime = new Date().toISOString();
+    buildRow();
+    D.final = true;
+    persist();
+    showRaw(`<h1>${T.wait}</h1>`);
+    await flush();
+    running = false;
+    try { wl && wl.release(); } catch (e) {}
+    showRaw(`<h1>${T.doneT}</h1><button class="b" id="rs">${T.restart}</button>`);
+    $('#rs').onclick = () => location.reload();
+  }
+
+  function buildRow() {
+    const att = S && S.cond != 'CONTROL', cfg = {...C};
+    delete cfg.sheetToken; delete cfg.strings; delete cfg.practiceItems;
+    cfg.urlParams = location.search;
+    S.row = {
+      rowId: S.pid + '-S', participantId: S.pid, initials: S.pid.split('_')[0], participantNumber: S.n ?? null, groupCode: S.gc ?? null, condition: S.cond ?? null, ratingOrder: S.ratingOrder ?? null, demo: DEMO, startTime: S.startTime, endTime: S.endTime, endedEarly: !!S.endedEarly, consentTimestamp: S.consentTs, age: S.age ?? null, gender: S.gender ?? null, firstLanguage: S.lang ?? null, englishFluency: S.flu ?? null, vision: S.vision ?? null, mood_baseline: S.moodBase ?? null, mood_post: S.moodPost ?? null, effort: S.effort ?? null, frustration: S.frust ?? null, craBlockSizes: JSON.stringify(S.blockSizes || null), pxPerDegreeNominal: att ? +geom().ppd.toFixed(2) : null, deviceInfo: JSON.stringify({ua: navigator.userAgent, platform: navigator.platform, screen: [screen.width, screen.height], inner: [innerWidth, innerHeight], dpr: devicePixelRatio, orientation: (screen.orientation || {}).type, touch: navigator.maxTouchPoints, hz: S.hz})
+    };
+  }
+
+  chk();
+  flow().catch(e => {
+    if (e !== ENDERR) console.error(e);
+  });
+})();
+</script>
+</body>
+</html>
